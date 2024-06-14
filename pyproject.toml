@@ -1,0 +1,14 @@
+[project]
+name = "comfyui-image-search"
+description = "Nodes:Close Images Searcher"
+version = "1.0.0"
+license = "LICENSE"
+
+[project.urls]
+Repository = "https://github.com/PnthrLeo/comfyUI-image-search"
+#  Used by Comfy Registry https://comfyregistry.org
+
+[tool.comfy]
+PublisherId = ""
+DisplayName = "comfyUI-image-search"
+Icon = ""
