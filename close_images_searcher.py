@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 
 import numpy as np
+import torch
 
 from .utils import (generate_clip_features_json, get_image_and_mask,
                     get_image_clip_embeddings)
@@ -29,11 +30,11 @@ class CloseImagesSearcher:
             "optional": {
                 "path_to_masks_folder": ("STRING", {
                     "multiline": True,
-                    "default": "None"
+                    "default": "path/to/folder/with/masks"
                 }),
                 "path_to_embeddings_databases": ("STRING", {
                     "multiline": True,
-                    "default": "None"
+                    "default": "path/to/folder/with/embeddings/databases"
                 }),
                 "offset": ("INT", {
                     "default": 0,
@@ -41,19 +42,24 @@ class CloseImagesSearcher:
                     "step": 1,
                     "display": "number"
                 }),
+                "num_of_similar_images": ("INT", {
+                    "default": 5,
+                    "min": 0,
+                    "step": 1,
+                    "display": "number"
+                }),
             }
         }
 
-    RETURN_TYPES = ("IMAGE", "IMAGE", "IMAGE", "IMAGE", "IMAGE", "IMAGE",
-                    "IMAGE", "IMAGE", "IMAGE", "IMAGE")
-    RETURN_NAMES = ("image1", "image2", "image3", "image4", "image5", "mask1",
-                    "mask2", "mask3", "mask4", "mask5")
+    RETURN_TYPES = ("IMAGE", "IMAGE", "INT")
+    RETURN_NAMES = ("images", "masks", "scores")
     FUNCTION = "get_5_similar_images"
-    CATEGORY = "Image Search"
+    CATEGORY = "PL Data Tools"
 
     def get_5_similar_images(self, image, clip_vision, path_to_images_folder,
                              embeddings_database_name, path_to_masks_folder,
-                             path_to_embeddings_databases, offset):
+                             path_to_embeddings_databases, offset,
+                             num_of_similar_images):
         path_to_images_folder = Path(path_to_images_folder)
         path_to_masks_folder = Path(path_to_masks_folder)
         path_to_embeddings_databases = Path(path_to_embeddings_databases)
@@ -88,12 +94,19 @@ class CloseImagesSearcher:
 
         images = []
         masks = []
+        scores = []
 
-        for idx, distance in distances[offset:offset+5]:
+        for idx, distance in distances[offset:offset+num_of_similar_images]:
             file_name, _ = clip_features[idx]
             image, mask = get_image_and_mask(file_name, path_to_images_folder,
                                              path_to_masks_folder)
             images.append(image)
             masks.append(mask)
+            scores.append(distance)
 
-        return images + masks
+        images = np.concatenate(images, axis=0)
+        print(images.shape)
+        masks = np.concatenate(masks, axis=0)
+        print(masks.shape)
+
+        return torch.tensor(images), torch.tensor(masks), torch.tensor(scores)
